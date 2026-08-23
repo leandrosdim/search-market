@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getDashboardData } from "@/lib/dashboard";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +45,12 @@ export default async function Home() {
               Live view of the software-market research database: scored opportunities, plain-language summaries,
               evidence signals, daily runs, and next validation tasks.
             </p>
+            <Link
+              href="/instructions"
+              className="mt-5 inline-block rounded-xl bg-violet-500/15 px-5 py-2.5 text-sm font-semibold text-violet-100 ring-1 ring-violet-300/30 transition hover:bg-violet-500/25"
+            >
+              Manage research instructions
+            </Link>
           </div>
           {topOpportunity ? (
             <div className="mt-8 rounded-3xl border border-cyan-300/20 bg-cyan-300/[0.06] p-5">
