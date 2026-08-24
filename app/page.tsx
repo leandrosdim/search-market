@@ -83,70 +83,86 @@ export default async function Home() {
             <p className="text-sm font-medium uppercase tracking-[0.25em] text-violet-200/80">Ranked opportunities</p>
             <h2 className="mt-2 text-2xl font-semibold text-white">What the searches found</h2>
           </div>
-          <p className="text-sm text-slate-400">Sorted by latest score. Each card includes a non-technical summary.</p>
+          <p className="text-sm text-slate-400">Sorted by latest score. Each row includes a non-technical summary.</p>
         </div>
 
-        <div className="mt-5 grid gap-4">
-          {opportunities.map((opportunity) => (
-            <article key={opportunity.id} className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 transition hover:border-cyan-300/30 hover:bg-white/[0.07]">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`rounded-full px-3 py-1 text-sm font-semibold ring-1 ${scoreClass(opportunity.total)}`}>
-                      {opportunity.total}/100
-                    </span>
-                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200">{opportunity.status}</span>
-                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200">{opportunity.decision}</span>
-                    {opportunity.geography ? <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-slate-300">{opportunity.geography}</span> : null}
-                  </div>
-                  <h3 className="mt-3 text-xl font-semibold text-white">{opportunity.name}</h3>
-                  <p className="mt-3 rounded-2xl border border-cyan-200/10 bg-cyan-200/[0.045] p-4 text-sm leading-6 text-cyan-50">
-                    <span className="font-semibold text-cyan-200">Simple summary: </span>
-                    {opportunity.summary}
-                  </p>
-                </div>
-                <div className="flex shrink-0 gap-3 text-center lg:w-48">
-                  <div className="flex-1 rounded-2xl bg-white/[0.06] p-3">
-                    <p className="text-2xl font-semibold text-white">{opportunity.evidenceCount}</p>
-                    <p className="text-xs text-slate-400">evidence</p>
-                  </div>
-                  <div className="flex-1 rounded-2xl bg-white/[0.06] p-3">
-                    <p className="text-2xl font-semibold text-white">{opportunity.competitorCount}</p>
-                    <p className="text-xs text-slate-400">competitors</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 grid gap-4 lg:grid-cols-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Market</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">{opportunity.market}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Customer</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">{opportunity.customerSegment}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Pricing idea</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-300">{opportunity.suggestedPricing ?? "Needs validation"}</p>
-                </div>
-              </div>
-
-              <details className="mt-4 rounded-2xl border border-white/10 bg-slate-950/40 p-4">
-                <summary className="cursor-pointer text-sm font-semibold text-slate-200">Show problem and product thesis</summary>
-                <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Problem</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">{opportunity.problem}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Product</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-300">{opportunity.proposedProduct}</p>
-                  </div>
-                </div>
-              </details>
-            </article>
-          ))}
+        <div className="mt-5 overflow-hidden rounded-3xl border border-white/10">
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse text-left text-sm">
+              <thead className="bg-white/[0.06] text-xs uppercase tracking-[0.18em] text-slate-400">
+                <tr>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Score</th>
+                  <th className="min-w-[18rem] px-4 py-3 font-semibold">Opportunity</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Verdict</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Market</th>
+                  <th className="min-w-[10rem] px-4 py-3 font-semibold">Customer</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Pricing</th>
+                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Evidence</th>
+                  <th className="px-4 py-3 font-semibold">Details</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/10">
+                {opportunities.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                      No opportunities found yet. Run a research cycle to populate this table.
+                    </td>
+                  </tr>
+                ) : (
+                  opportunities.map((opportunity) => (
+                    <tr key={opportunity.id} className="bg-white/[0.025] align-top transition hover:bg-white/[0.055]">
+                      <td className="whitespace-nowrap px-4 py-4">
+                        <span className={`rounded-full px-3 py-1 text-sm font-semibold ring-1 ${scoreClass(opportunity.total)}`}>
+                          {opportunity.total}/100
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="font-semibold text-white">{opportunity.name}</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-300">{opportunity.summary}</p>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-4">
+                        <div className="flex flex-col gap-1">
+                          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200">{opportunity.status}</span>
+                          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200">{opportunity.decision}</span>
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-4">
+                        <p className="text-slate-300">{opportunity.market}</p>
+                        {opportunity.geography ? (
+                          <p className="mt-1 text-xs text-slate-500">{opportunity.geography}</p>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-4 text-slate-300">{opportunity.customerSegment}</td>
+                      <td className="whitespace-nowrap px-4 py-4 text-slate-300">
+                        {opportunity.suggestedPricing ?? <span className="text-slate-500">Needs validation</span>}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-4 text-center">
+                        <p className="text-lg font-semibold text-white">{opportunity.evidenceCount}</p>
+                        <p className="text-xs text-slate-500">evidence</p>
+                        <p className="mt-2 text-lg font-semibold text-white">{opportunity.competitorCount}</p>
+                        <p className="text-xs text-slate-500">competitors</p>
+                      </td>
+                      <td className="px-4 py-4">
+                        <details className="rounded-xl border border-white/10 bg-slate-950/40 p-2">
+                          <summary className="cursor-pointer text-xs font-semibold text-slate-300">Problem &amp; product thesis</summary>
+                          <div className="mt-2 space-y-3">
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Problem</p>
+                              <p className="mt-1 text-sm leading-6 text-slate-300">{opportunity.problem}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Product</p>
+                              <p className="mt-1 text-sm leading-6 text-slate-300">{opportunity.proposedProduct}</p>
+                            </div>
+                          </div>
+                        </details>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
