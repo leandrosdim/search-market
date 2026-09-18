@@ -13,6 +13,7 @@ Continuously research global software markets and store evidence-backed opportun
 - `opportunities`: deduplicated opportunity records with lifecycle status and product thesis.
 - `opportunity_signal_links`: many-to-many links from evidence to opportunities.
 - `competitors`: product/price/positioning/weakness data per opportunity.
+- `competitor_sources`: URLs where each competitor was found or validated, so every opportunity can show competitor names plus search/research sources.
 - `opportunity_scores`: immutable score history using the required 100-point model.
 - `rejected_ideas`: rejected concepts and reasons, kept as intelligence.
 - `research_backlog`: follow-up research tasks for future daily runs.

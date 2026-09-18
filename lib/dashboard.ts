@@ -9,6 +9,25 @@ export type DashboardStats = {
   sources: number;
 };
 
+export type CompetitorSourceRow = {
+  url: string;
+  title: string | null;
+  type: string | null;
+  context: string | null;
+};
+
+export type CompetitorRow = {
+  id: number;
+  name: string;
+  url: string | null;
+  positioning: string | null;
+  pricing: string | null;
+  strengths: string | null;
+  weaknesses: string | null;
+  recurringComplaints: string | null;
+  sources: CompetitorSourceRow[];
+};
+
 export type OpportunityRow = {
   id: number;
   name: string;
@@ -19,12 +38,38 @@ export type OpportunityRow = {
   geography: string | null;
   customerSegment: string;
   problem: string;
+  currentSolution: string | null;
   proposedProduct: string;
+  differentiation: string | null;
+  businessModel: string | null;
   suggestedPricing: string | null;
+  mvp: string | null;
+  technicalApproach: string | null;
+  distributionFirst10: string | null;
+  distribution100: string | null;
+  risks: string | null;
+  whyNow: string | null;
   total: number;
   scoredAt: string;
   evidenceCount: number;
   competitorCount: number;
+  competitors: CompetitorRow[];
+  evidence: OpportunityEvidenceRow[];
+};
+
+export type OpportunityEvidenceRow = {
+  id: number;
+  signalType: string;
+  title: string;
+  url: string;
+  excerpt: string;
+  geography: string | null;
+  customerSegment: string | null;
+  painPoint: string | null;
+  currentSolution: string | null;
+  willingnessToPay: string | null;
+  credibility: number;
+  discoveredAt: string;
 };
 
 export type RunRow = {
@@ -103,8 +148,17 @@ export async function getDashboardData() {
     geography: string | null;
     customer_segment: string;
     problem: string;
+    current_solution: string | null;
     proposed_product: string;
+    differentiation: string | null;
+    business_model: string | null;
     suggested_pricing: string | null;
+    mvp: string | null;
+    technical_approach: string | null;
+    distribution_first_10: string | null;
+    distribution_100: string | null;
+    risks: string | null;
+    why_now: string | null;
     total: string;
     scored_at: Date;
     evidence_count: string;
@@ -120,8 +174,17 @@ export async function getDashboardData() {
       o.geography,
       o.customer_segment,
       o.problem,
+      o.current_solution,
       o.proposed_product,
+      o.differentiation,
+      o.business_model,
       o.suggested_pricing,
+      o.mvp,
+      o.technical_approach,
+      o.distribution_first_10,
+      o.distribution_100,
+      o.risks,
+      o.why_now,
       s.total,
       s.scored_at,
       count(DISTINCT osl.signal_id) AS evidence_count,
@@ -134,6 +197,135 @@ export async function getDashboardData() {
     ORDER BY s.total DESC, s.scored_at DESC
     LIMIT 20
   `);
+
+  const opportunityIds = rawOpportunities.map((row) => toNumber(row.id));
+  const rawCompetitors = opportunityIds.length > 0
+    ? await query<{
+        opportunity_id: string;
+        id: string;
+        name: string;
+        url: string | null;
+        positioning: string | null;
+        pricing: string | null;
+        strengths: string | null;
+        weaknesses: string | null;
+        recurring_complaints: string | null;
+        sources: unknown;
+      }>(`
+        SELECT
+          c.opportunity_id,
+          c.id,
+          c.name,
+          c.url,
+          c.positioning,
+          c.pricing,
+          c.strengths,
+          c.weaknesses,
+          c.recurring_complaints,
+          COALESCE(
+            json_agg(
+              json_build_object(
+                'url', cs.source_url,
+                'title', cs.source_title,
+                'type', cs.source_type,
+                'context', cs.context
+              ) ORDER BY cs.discovered_at DESC, cs.id DESC
+            ) FILTER (WHERE cs.id IS NOT NULL),
+            '[]'::json
+          ) AS sources
+        FROM competitors c
+        LEFT JOIN competitor_sources cs ON cs.competitor_id = c.id
+        WHERE c.opportunity_id = ANY($1::bigint[])
+        GROUP BY c.id
+        ORDER BY c.opportunity_id, c.name
+      `, [opportunityIds])
+    : [];
+
+  const competitorsByOpportunity = new Map<number, CompetitorRow[]>();
+  for (const row of rawCompetitors) {
+    const opportunityId = toNumber(row.opportunity_id);
+    const list = competitorsByOpportunity.get(opportunityId) ?? [];
+    const sources = Array.isArray(row.sources) ? row.sources : [];
+    list.push({
+      id: toNumber(row.id),
+      name: row.name,
+      url: row.url,
+      positioning: row.positioning,
+      pricing: row.pricing,
+      strengths: row.strengths,
+      weaknesses: row.weaknesses,
+      recurringComplaints: row.recurring_complaints,
+      sources: sources
+        .filter((source): source is Record<string, unknown> => source !== null && typeof source === "object")
+        .map((source) => ({
+          url: String(source.url ?? ""),
+          title: source.title === null || source.title === undefined ? null : String(source.title),
+          type: source.type === null || source.type === undefined ? null : String(source.type),
+          context: source.context === null || source.context === undefined ? null : String(source.context),
+        }))
+        .filter((source) => source.url.length > 0),
+    });
+    competitorsByOpportunity.set(opportunityId, list);
+  }
+
+
+  const rawEvidence = opportunityIds.length > 0
+    ? await query<{
+        opportunity_id: string;
+        id: string;
+        signal_type: string;
+        title: string;
+        url: string;
+        excerpt: string;
+        geography: string | null;
+        customer_segment: string | null;
+        pain_point: string | null;
+        current_solution: string | null;
+        willingness_to_pay: string | null;
+        credibility: number;
+        discovered_at: Date;
+      }>(`
+        SELECT
+          osl.opportunity_id,
+          ms.id,
+          ms.signal_type,
+          ms.title,
+          ms.url,
+          ms.excerpt,
+          ms.geography,
+          ms.customer_segment,
+          ms.pain_point,
+          ms.current_solution,
+          ms.willingness_to_pay,
+          ms.credibility,
+          ms.discovered_at
+        FROM opportunity_signal_links osl
+        JOIN market_signals ms ON ms.id = osl.signal_id
+        WHERE osl.opportunity_id = ANY($1::bigint[])
+        ORDER BY osl.opportunity_id, ms.credibility DESC, ms.discovered_at DESC, ms.id DESC
+      `, [opportunityIds])
+    : [];
+
+  const evidenceByOpportunity = new Map<number, OpportunityEvidenceRow[]>();
+  for (const row of rawEvidence) {
+    const opportunityId = toNumber(row.opportunity_id);
+    const list = evidenceByOpportunity.get(opportunityId) ?? [];
+    list.push({
+      id: toNumber(row.id),
+      signalType: row.signal_type,
+      title: row.title,
+      url: row.url,
+      excerpt: row.excerpt,
+      geography: row.geography,
+      customerSegment: row.customer_segment,
+      painPoint: row.pain_point,
+      currentSolution: row.current_solution,
+      willingnessToPay: row.willingness_to_pay,
+      credibility: toNumber(row.credibility),
+      discoveredAt: toIso(row.discovered_at),
+    });
+    evidenceByOpportunity.set(opportunityId, list);
+  }
 
   const rawRuns = await query<{
     id: string;
@@ -206,23 +398,37 @@ export async function getDashboardData() {
     sources: toNumber(statsRow.sources),
   };
 
-  const opportunities: OpportunityRow[] = rawOpportunities.map((row) => ({
-    id: toNumber(row.id),
-    name: row.name,
-    summary: row.summary,
-    status: row.status,
-    decision: row.decision,
-    market: row.market,
-    geography: row.geography,
-    customerSegment: row.customer_segment,
-    problem: row.problem,
-    proposedProduct: row.proposed_product,
-    suggestedPricing: row.suggested_pricing,
-    total: toNumber(row.total),
-    scoredAt: toIso(row.scored_at),
-    evidenceCount: toNumber(row.evidence_count),
-    competitorCount: toNumber(row.competitor_count),
-  }));
+  const opportunities: OpportunityRow[] = rawOpportunities.map((row) => {
+    const id = toNumber(row.id);
+    return {
+      id,
+      name: row.name,
+      summary: row.summary,
+      status: row.status,
+      decision: row.decision,
+      market: row.market,
+      geography: row.geography,
+      customerSegment: row.customer_segment,
+      problem: row.problem,
+      currentSolution: row.current_solution,
+      proposedProduct: row.proposed_product,
+      differentiation: row.differentiation,
+      businessModel: row.business_model,
+      suggestedPricing: row.suggested_pricing,
+      mvp: row.mvp,
+      technicalApproach: row.technical_approach,
+      distributionFirst10: row.distribution_first_10,
+      distribution100: row.distribution_100,
+      risks: row.risks,
+      whyNow: row.why_now,
+      total: toNumber(row.total),
+      scoredAt: toIso(row.scored_at),
+      evidenceCount: toNumber(row.evidence_count),
+      competitorCount: toNumber(row.competitor_count),
+      competitors: competitorsByOpportunity.get(id) ?? [],
+      evidence: evidenceByOpportunity.get(id) ?? [],
+    };
+  });
 
   const runs: RunRow[] = rawRuns.map((row) => ({
     id: toNumber(row.id),

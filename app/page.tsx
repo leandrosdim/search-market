@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getDashboardData } from "@/lib/dashboard";
+import { OpportunityTable } from "./OpportunityTable";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -86,84 +87,7 @@ export default async function Home() {
           <p className="text-sm text-slate-400">Sorted by latest score. Each row includes a non-technical summary.</p>
         </div>
 
-        <div className="mt-5 overflow-hidden rounded-3xl border border-white/10">
-          <div className="overflow-x-auto">
-            <table className="min-w-full border-collapse text-left text-sm">
-              <thead className="bg-white/[0.06] text-xs uppercase tracking-[0.18em] text-slate-400">
-                <tr>
-                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Score</th>
-                  <th className="min-w-[18rem] px-4 py-3 font-semibold">Opportunity</th>
-                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Verdict</th>
-                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Market</th>
-                  <th className="min-w-[10rem] px-4 py-3 font-semibold">Customer</th>
-                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Pricing</th>
-                  <th className="whitespace-nowrap px-4 py-3 font-semibold">Evidence</th>
-                  <th className="px-4 py-3 font-semibold">Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/10">
-                {opportunities.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
-                      No opportunities found yet. Run a research cycle to populate this table.
-                    </td>
-                  </tr>
-                ) : (
-                  opportunities.map((opportunity) => (
-                    <tr key={opportunity.id} className="bg-white/[0.025] align-top transition hover:bg-white/[0.055]">
-                      <td className="whitespace-nowrap px-4 py-4">
-                        <span className={`rounded-full px-3 py-1 text-sm font-semibold ring-1 ${scoreClass(opportunity.total)}`}>
-                          {opportunity.total}/100
-                        </span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className="font-semibold text-white">{opportunity.name}</p>
-                        <p className="mt-2 text-sm leading-6 text-slate-300">{opportunity.summary}</p>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4">
-                        <div className="flex flex-col gap-1">
-                          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200">{opportunity.status}</span>
-                          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200">{opportunity.decision}</span>
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4">
-                        <p className="text-slate-300">{opportunity.market}</p>
-                        {opportunity.geography ? (
-                          <p className="mt-1 text-xs text-slate-500">{opportunity.geography}</p>
-                        ) : null}
-                      </td>
-                      <td className="px-4 py-4 text-slate-300">{opportunity.customerSegment}</td>
-                      <td className="whitespace-nowrap px-4 py-4 text-slate-300">
-                        {opportunity.suggestedPricing ?? <span className="text-slate-500">Needs validation</span>}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4 text-center">
-                        <p className="text-lg font-semibold text-white">{opportunity.evidenceCount}</p>
-                        <p className="text-xs text-slate-500">evidence</p>
-                        <p className="mt-2 text-lg font-semibold text-white">{opportunity.competitorCount}</p>
-                        <p className="text-xs text-slate-500">competitors</p>
-                      </td>
-                      <td className="px-4 py-4">
-                        <details className="rounded-xl border border-white/10 bg-slate-950/40 p-2">
-                          <summary className="cursor-pointer text-xs font-semibold text-slate-300">Problem &amp; product thesis</summary>
-                          <div className="mt-2 space-y-3">
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Problem</p>
-                              <p className="mt-1 text-sm leading-6 text-slate-300">{opportunity.problem}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Product</p>
-                              <p className="mt-1 text-sm leading-6 text-slate-300">{opportunity.proposedProduct}</p>
-                            </div>
-                          </div>
-                        </details>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <OpportunityTable opportunities={opportunities} />
       </section>
 
       <section className="mt-8 grid gap-6 lg:grid-cols-2">

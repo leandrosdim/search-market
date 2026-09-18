@@ -124,6 +124,18 @@ CREATE TABLE IF NOT EXISTS competitors (
     UNIQUE (opportunity_id, name)
 );
 
+CREATE TABLE IF NOT EXISTS competitor_sources (
+    id BIGSERIAL PRIMARY KEY,
+    competitor_id BIGINT NOT NULL REFERENCES competitors(id) ON DELETE CASCADE,
+    source_id BIGINT REFERENCES sources(id) ON DELETE SET NULL,
+    source_url TEXT NOT NULL,
+    source_title TEXT,
+    source_type TEXT,
+    context TEXT,
+    discovered_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (competitor_id, source_url)
+);
+
 CREATE TABLE IF NOT EXISTS opportunity_scores (
     id BIGSERIAL PRIMARY KEY,
     opportunity_id BIGINT NOT NULL REFERENCES opportunities(id) ON DELETE CASCADE,
@@ -203,6 +215,36 @@ CREATE INDEX IF NOT EXISTS idx_market_signals_geo ON market_signals(geography);
 CREATE INDEX IF NOT EXISTS idx_opportunities_status ON opportunities(status);
 CREATE INDEX IF NOT EXISTS idx_opportunity_scores_total ON opportunity_scores(total DESC);
 CREATE INDEX IF NOT EXISTS idx_backlog_status_priority ON research_backlog(status, priority DESC);
+CREATE INDEX IF NOT EXISTS idx_competitors_opportunity ON competitors(opportunity_id);
+CREATE INDEX IF NOT EXISTS idx_competitor_sources_competitor ON competitor_sources(competitor_id);
+CREATE INDEX IF NOT EXISTS idx_competitor_sources_source_url ON competitor_sources(source_url);
+
+INSERT INTO competitor_sources (competitor_id, source_url, source_title, source_type, context)
+SELECT c.id, c.url, c.name, 'competitor_profile', c.positioning
+FROM competitors c
+WHERE c.url IS NOT NULL AND c.url <> ''
+ON CONFLICT (competitor_id, source_url) DO UPDATE SET
+    source_title = EXCLUDED.source_title,
+    source_type = EXCLUDED.source_type,
+    context = EXCLUDED.context;
+
+INSERT INTO competitor_sources (competitor_id, source_id, source_url, source_title, source_type, context)
+SELECT DISTINCT c.id, ms.source_id, ms.url, ms.title, ms.signal_type, ms.excerpt
+FROM competitors c
+JOIN opportunities o ON o.id = c.opportunity_id
+JOIN opportunity_signal_links osl ON osl.opportunity_id = o.id
+JOIN market_signals ms ON ms.id = osl.signal_id
+WHERE c.name <> ''
+  AND (
+    ms.title ILIKE '%' || c.name || '%'
+    OR ms.excerpt ILIKE '%' || c.name || '%'
+    OR COALESCE(ms.current_solution, '') ILIKE '%' || c.name || '%'
+  )
+ON CONFLICT (competitor_id, source_url) DO UPDATE SET
+    source_id = COALESCE(EXCLUDED.source_id, competitor_sources.source_id),
+    source_title = EXCLUDED.source_title,
+    source_type = EXCLUDED.source_type,
+    context = EXCLUDED.context;
 
 -- Legacy smoke-test tables from initial bootstrap may exist; keep them harmlessly.
 """

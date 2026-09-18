@@ -15,6 +15,8 @@ def main() -> None:
                 (SELECT count(*) FROM research_runs) AS research_runs,
                 (SELECT count(*) FROM market_signals) AS market_signals,
                 (SELECT count(*) FROM opportunities) AS opportunities,
+                (SELECT count(*) FROM competitors) AS competitors,
+                (SELECT count(*) FROM competitor_sources) AS competitor_sources,
                 (SELECT count(*) FROM rejected_ideas) AS rejected_ideas,
                 (SELECT count(*) FROM research_backlog WHERE status = 'OPEN') AS open_backlog
             """
@@ -24,6 +26,8 @@ def main() -> None:
             f"research_runs={totals['research_runs']} "
             f"market_signals={totals['market_signals']} "
             f"opportunities={totals['opportunities']} "
+            f"competitors={totals['competitors']} "
+            f"competitor_sources={totals['competitor_sources']} "
             f"rejected_ideas={totals['rejected_ideas']} "
             f"open_backlog={totals['open_backlog']}"
         )
